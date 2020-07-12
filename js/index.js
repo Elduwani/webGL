@@ -4,7 +4,7 @@ import { OrbitControls } from "./OrbitControls.js"
  * Scene, Camera, Controls
 */
 const scene = new THREE.Scene()
-scene.background = new THREE.Color("#111")
+scene.background = new THREE.Color("#000")
 
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000)
 const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -15,7 +15,7 @@ renderer.shadowMap.type = THREE.PCFShadowMap
 document.body.appendChild(renderer.domElement)
 
 const controls = new OrbitControls(camera, renderer.domElement)
-camera.position.set(0, 10, 15)
+camera.position.set(0, 10, 25)
 camera.rotation.x = degToRad(50)
 controls.update()
 
@@ -30,16 +30,15 @@ const generateTorus = (radius = 1.4, tube = 0.01, radialSegments = 4, tabularSeg
 /**
  * Materials | Materials | Materials | 
 */
-const colors = ["#3532a7", "#646ecb", "#b793e6", "#eae7ed", "#36d1c4", "#a0eecc", "#f6318c"]
-
+const colors = ["#3532a7", "#646ecb", "#b793e6", "#eae7ed", "#36d1c4", "#a0eecc", "#f6318c", "#a6cb12", "#47d6b6"]
 const floorMat = new THREE.MeshStandardMaterial({ color: `rgb(202,63,63)` })
 const sunMat = new THREE.MeshStandardMaterial({ color: "white", emissive: 0xff0000 })
 
 /**
  * Meshes | Meshes | Meshes | 
 */
-const planets = []
-const sGeo = generateSphere(1)
+let pivots = [], sunRadius = 1, sunRotation = 0.002
+const sGeo = generateSphere(sunRadius)
 const sun = new THREE.Mesh(sGeo, sunMat)
 const floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(20, 20), floorMat)
 enableWireframe(sGeo, sun)
@@ -50,20 +49,12 @@ enableWireframe(sGeo, sun)
 */
 floor.rotation.x = degToRad(-90)
 floor.position.set(0, -2, 0)
-
 sun.castShadow = true
 floor.receiveShadow = true
-
-const pivot = new THREE.Group();
-pivot.position.set(0, 0.0, 0);
-pivot.rotation.z = degToRad(12)
-scene.add(sun, pivot);
-
-generatePlanet(0.3, 2.4) //Earth
-generatePlanet(0.15, 3.2) //N
-generatePlanet(0.1, 5) //E
+scene.add(sun);
 
 // initHelpers()
+generatePlanets(9, sunRadius)
 initLights()
 animate()
 
@@ -71,25 +62,51 @@ animate()
  * Functions | Functions | Functions |
 */
 
-function generatePlanet(radius, ringRadius) {
-    const color = colors[Math.floor(Math.random() * colors.length)]
-    const banking = Math.floor(Math.random() * (100 - 80 + 1)) + 80
+function generatePlanets(count, sunRadius) {
+    const randomNumber = (max, min = 1) => Math.floor(Math.random() * (max - min)) + min
+    const randomColor = () => colors[Math.floor(Math.random() * colors.length)]
+    let lastColor;
 
-    const mat = new THREE.MeshStandardMaterial({ color: color, emissive: color })
-    const ringMat = new THREE.MeshStandardMaterial({ color: color })
+    for (let i = 1; i <= count; i++) {
+        const color = randomColor()
 
-    const geo = generateSphere(radius)
-    const planet = new THREE.Mesh(geo, mat)
-    const ring = new THREE.Mesh(generateTorus(ringRadius), ringMat)
+        //Avoid same neighbor color
+        if (lastColor === color) {
+            i = i - 1
+            continue
+        }
 
-    planet.position.set(-ringRadius, 0, 0)
-    ring.rotation.x = degToRad(banking)
-    enableWireframe(geo, planet, true)
-    planet.castShadow = true
-    ring.castShadow = true
-    pivot.add(planet, ring)
+        //save used color
+        lastColor = color
 
-    planets.push(planet)
+        const pvtInitialRotation = degToRad(randomNumber(320))
+        const planetRadius = randomNumber(5) * 0.06
+        const ringRadius = sunRadius * (i * randomNumber(1.6, 1.2)) + (i === 1 ? sunRadius / 1.5 : sunRadius / 4)
+
+        const mat = new THREE.MeshStandardMaterial({ color: color, emissive: color })
+        const ringMat = new THREE.MeshStandardMaterial({ color: color })
+
+        const geo = generateSphere(planetRadius)
+        const planet = new THREE.Mesh(geo, mat)
+        enableWireframe(geo, planet, true)
+        planet.position.set(-ringRadius, 0, 0)
+
+        planet.rotationValue = randomNumber(5, 0.5) * 0.015
+        planet.castShadow = true
+
+        const ring = new THREE.Mesh(generateTorus(ringRadius), ringMat)
+        ring.rotation.x = degToRad(randomNumber(100, 80))
+        ring.castShadow = true
+
+        const pivot = new THREE.Group();
+        pivot.position.set(0, 0.0, 0);
+        pivot.rotation.y = pvtInitialRotation
+        pivot.orbitValue = sunRotation / i
+
+        pivot.add(ring, planet)
+        scene.add(pivot);
+        pivots.push(pivot)
+    }
 }
 
 function initLights() {
@@ -110,15 +127,18 @@ function initLights() {
     // spotLight.castShadow = true
     // spotLight.shadow.radius = 9
 
-    scene.add(light, ambientLight, helper)
+    scene.add(light, ambientLight)
 }
 
 function animate() {
     requestAnimationFrame(animate)
-    sun.rotation.y += 0.002
-    pivot.rotation.y += 0.002
+    sun.rotation.y += sunRotation
 
-    planets.forEach(planet => planet.rotation.y += 0.015)
+    pivots.forEach(pivot => {
+        pivot.rotation.y += pivot.orbitValue
+        pivot.children[1].rotation.y += pivot.children[1].rotationValue
+    })
+
     renderer.render(scene, camera)
 }
 
