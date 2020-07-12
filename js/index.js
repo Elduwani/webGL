@@ -1,4 +1,5 @@
 import { OrbitControls } from "./OrbitControls.js"
+import { planetaryData, range } from "./planetary_data.js"
 
 /**
  * Scene, Camera, Controls
@@ -54,7 +55,7 @@ floor.receiveShadow = true
 scene.add(sun);
 
 // initHelpers()
-generatePlanets(9, sunRadius)
+generatePlanets(sunRadius)
 initLights()
 animate()
 
@@ -62,51 +63,51 @@ animate()
  * Functions | Functions | Functions |
 */
 
-function generatePlanets(count, sunRadius) {
+function generatePlanets(sunRadius) {
     const randomNumber = (max, min = 1) => Math.floor(Math.random() * (max - min)) + min
     const randomColor = () => colors[Math.floor(Math.random() * colors.length)]
-    let lastColor;
 
-    for (let i = 1; i <= count; i++) {
+    const { min: minRadius, max: maxRadius } = planetaryData.reduce((acc, curr) => {
+        if (curr.radius > acc.max) acc.max = curr.radius
+        if (curr.radius < acc.min) acc.min = curr.radius
+        return acc
+    }, { min: planetaryData[0].radius, max: 0 })
+
+    planetaryData.forEach((pl) => {
         const color = randomColor()
-
-        //Avoid same neighbor color
-        if (lastColor === color) {
-            i = i - 1
-            continue
-        }
-
-        //save used color
-        lastColor = color
-
-        const pvtInitialRotation = degToRad(randomNumber(320))
-        const planetRadius = randomNumber(5) * 0.06
-        const ringRadius = sunRadius * (i * randomNumber(1.6, 1.2)) + (i === 1 ? sunRadius / 1.5 : sunRadius / 4)
-
         const mat = new THREE.MeshStandardMaterial({ color: color, emissive: color })
         const ringMat = new THREE.MeshStandardMaterial({ color: color })
 
-        const geo = generateSphere(planetRadius)
+        const { orbit, radius, tilt, distance, rotationSpeed } = pl
+
+        const dist = distance + (sunRadius * 2)
+        const newDistance = dist > 3 ? dist / 2 : dist
+
+        const r = range([minRadius, maxRadius], [0.08, 0.3], radius)
+        const geo = generateSphere(r)
         const planet = new THREE.Mesh(geo, mat)
         enableWireframe(geo, planet, true)
-        planet.position.set(-ringRadius, 0, 0)
-
-        planet.rotationValue = randomNumber(5, 0.5) * 0.015
+        planet.position.set(-newDistance, 0, 0)
+        planet.rotationValue = sunRotation / rotationSpeed
+        planet.rotation.x = degToRad(tilt)
         planet.castShadow = true
 
-        const ring = new THREE.Mesh(generateTorus(ringRadius), ringMat)
-        ring.rotation.x = degToRad(randomNumber(100, 80))
+        const ring = new THREE.Mesh(generateTorus(newDistance), ringMat)
+        ring.rotation.x = degToRad(randomNumber(95, 85))
         ring.castShadow = true
+
+        //TODO: Add rings of Saturn
 
         const pivot = new THREE.Group();
         pivot.position.set(0, 0.0, 0);
-        pivot.rotation.y = pvtInitialRotation
-        pivot.orbitValue = sunRotation / i
+        pivot.rotation.y = degToRad(randomNumber(320)) //randomized planet's position on the ring
+        pivot.orbitValue = sunRotation / orbit
+        console.log(orbit / sunRotation, orbit)
 
         pivot.add(ring, planet)
         scene.add(pivot);
         pivots.push(pivot)
-    }
+    })
 }
 
 function initLights() {
