@@ -18,3 +18,31 @@ $clr_6: #a0eecc;
 $clr_7: #f6318c; 
 $clr_8: #a6cb12; 
 $clr_9: #47d6b6;
+
+@mixin fontFamily() {
+    font-family: 'Roboto', 'Montserrat', -apple-system, 
+    BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", 
+    "Helvetica Neue", sans-serif;
+}
+
+.wrapper{
+    width: 100%;
+    height: 100%;
+    position: relative;
+
+    .overlay{
+        left: 0;
+        bottom: 0;
+        position: absolute;
+        // background-color: red;
+        @include fontFamily;
+        padding: 0.5rem 1rem;
+
+        span{
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            color: $clr_9;
+        }
+    }
+}

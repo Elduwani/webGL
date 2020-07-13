@@ -8,4 +8,24 @@ html, body {
   height: 100%;
   width: 100%;
 }
+
+.wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.wrapper .overlay {
+  left: 0;
+  bottom: 0;
+  position: absolute;
+  font-family: 'Roboto', 'Montserrat', -apple-system,  BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",  "Helvetica Neue", sans-serif;
+  padding: 0.5rem 1rem;
+}
+
+.wrapper .overlay span {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: #47d6b6;
+}
 /*# sourceMappingURL=style.css.map */

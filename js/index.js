@@ -6,6 +6,7 @@ import { planetaryData, range } from "./planetary_data.js"
 */
 const scene = new THREE.Scene()
 scene.background = new THREE.Color("#000")
+const domNode = document.querySelector(".render-container")
 
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000)
 const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -13,7 +14,7 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(window.devicePixelRatio)
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFShadowMap
-document.body.appendChild(renderer.domElement)
+domNode.appendChild(renderer.domElement)
 
 const controls = new OrbitControls(camera, renderer.domElement)
 camera.position.set(0, 10, 25)
